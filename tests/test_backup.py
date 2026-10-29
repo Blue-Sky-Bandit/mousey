@@ -67,3 +67,24 @@ def test_filling_empty_sector_needs_flag():
     plan = backup.plan_restore(make(new), make(cur))
     assert plan.write == [] and "blank on the mouse" in plan.skipped[6]
     assert backup.plan_restore(make(new), make(cur), allow_fill_empty=True).write == [6]
+
+
+def test_mousey_folder_with_legacy_folder_still_read(tmp_path, monkeypatch):
+    monkeypatch.setenv("APPDATA", str(tmp_path))
+    old = tmp_path / "G502Configurator" / "backups"
+    old.mkdir(parents=True)
+    (old / "g502-backup-20261029-090000-000000.json").write_text("{}")
+    assert backup.default_backup_dir() == tmp_path / "Mousey" / "backups"
+    assert backup.backup_dirs() == [tmp_path / "Mousey" / "backups", old]
+    new = backup.default_backup_dir()
+    new.mkdir(parents=True)
+    (new / "g502-backup-20261030-090000-000000.json").write_text("{}")
+    names = [f.name for f in backup.list_backups(backup.backup_dirs())]
+    assert names == ["g502-backup-20261029-090000-000000.json", "g502-backup-20261030-090000-000000.json"]
+
+
+def test_backup_reason_is_saved(tmp_path):
+    b = make(load_sectors())
+    b.meta.update(created="2026-10-30T09:00:00.000000", backup_format=backup.BACKUP_FORMAT)
+    path = backup.save_backup(b, tmp_path, "before-write")
+    assert backup.load_backup(path).meta["reason"] == "before-write"

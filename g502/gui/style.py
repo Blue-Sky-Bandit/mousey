@@ -11,13 +11,15 @@ DARK = {
     "bg": "#15171c", "surface": "#1e2128", "surface2": "#262a32", "hover": "#2d323b",
     "border": "#343a45", "text": "#e7e9ed", "muted": "#9aa2af", "accent": "#FDDC01",
     "accent_hover": "#FFE84D", "on_accent": "#111111", "accent_strong": "#FDDC01", "danger": "#ef5f5f",
-    "warn_bg": "#3a3120", "warn_text": "#f2c46d", "ok": "#4cc38a", "selection": "#3d3714", "chevron": "chevron-dark.svg",
+    "warn_bg": "#3a3120", "warn_text": "#f2c46d", "ok": "#4cc38a", "selection": "#3d3714",
+    "chevron": "chevron-dark.svg",
 }
 LIGHT = {
     "bg": "#f3f4f7", "surface": "#ffffff", "surface2": "#f1f2f5", "hover": "#e8eaef",
     "border": "#d8dbe2", "text": "#1c2027", "muted": "#5f6876", "accent": "#FDDC01",
     "accent_hover": "#F2CF00", "on_accent": "#111111", "accent_strong": "#8F7200", "danger": "#d43c3c",
-    "warn_bg": "#fff4dc", "warn_text": "#7a5410", "ok": "#1f8a57", "selection": "#FFF3B0", "chevron": "chevron-light.svg",
+    "warn_bg": "#fff4dc", "warn_text": "#7a5410", "ok": "#1f8a57", "selection": "#FFF3B0",
+    "chevron": "chevron-light.svg",
 }
 
 QSS = """

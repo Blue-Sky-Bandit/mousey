@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from .. import labels, library
-from .widgets import card, hint
+from .common import led_css
+from .widgets import card, clear_layout, hint
 
 
 def _dot(zone: dict) -> QLabel:
-    from .app import led_css
     d = QLabel()
     d.setFixedSize(14, 14)
     d.setStyleSheet(f"{led_css(zone)} border-radius: 7px; border: 1px solid rgba(127,127,127,0.6);")
@@ -39,9 +39,9 @@ class LibraryPage(QWidget):
     delete_requested = Signal(object)        # Path
     open_folder_requested = Signal()
 
-    def __init__(self, directory: Path, parent=None):
+    def __init__(self, directories: list[Path], parent=None):
         super().__init__(parent)
-        self.directory = directory
+        self.directories = directories     # first one is where new entries are saved
         self.slot = "this profile"
         self.saved_buttons: list[QPushButton] = []
         lay = QVBoxLayout(self)
@@ -93,17 +93,19 @@ class LibraryPage(QWidget):
         self.saved_buttons.append(load)
         buttons.addWidget(load)
         buttons.addStretch(1)
-        delete = QPushButton("Delete")
-        delete.clicked.connect(lambda: self.delete_requested.emit(entry.path))
-        buttons.addWidget(delete)
+        if entry.path and entry.path.parent == self.directories[0]:
+            delete = QPushButton("Delete")
+            delete.clicked.connect(lambda: self.delete_requested.emit(entry.path))
+            buttons.addWidget(delete)
+        else:
+            buttons.addWidget(hint("from an older version's folder"))
         c.addLayout(buttons)
         return frame
 
     def reload(self) -> None:
-        while self.saved.count():
-            self.saved.takeAt(0).widget().deleteLater()
+        clear_layout(self.saved)
         self.saved_buttons = []
-        entries, problems = library.list_entries(self.directory)
+        entries, problems = library.list_entries(self.directories)
         if not entries:
             self.saved.addWidget(hint("Nothing saved yet. Set up a profile the way you like it, then press "
                                       "Save to library. Saved profiles can be loaded into any slot."))

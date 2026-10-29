@@ -104,8 +104,9 @@ def test_in_use_profile_cannot_be_deactivated(win, monkeypatch):
 
 
 def test_library_load_and_save(win, tmp_path, monkeypatch):
-    from g502 import library
     from PySide6.QtWidgets import QInputDialog
+
+    from g502 import library
     assert win.library_page.saved_buttons == []          # nothing pre-populated
     win.list.setCurrentRow(0)
     entry = library.settings_of(dict(win.prof, name="Mine", lighting={
@@ -123,7 +124,7 @@ def test_library_load_and_save(win, tmp_path, monkeypatch):
 
 
 def test_left_click_locked_on_main_layer(win, monkeypatch):
-    from g502.gui import app as appmod
+    from g502.gui import editor as appmod
     opened = []
     monkeypatch.setattr(appmod, "BindingDialog", lambda *a, **k: opened.append(a) or pytest.fail("opened"))
     win.list.setCurrentRow(2)
@@ -163,8 +164,8 @@ def test_copy_swap_and_factory_reset(win, monkeypatch):
 
 
 def test_tester_matches_inputs(qapp):
-    from g502.gui.tester import rows_for, same_action
     from g502 import model
+    from g502.gui.tester import rows_for, same_action
     p = model.decode_profile(current().sectors[3])
     rows = rows_for(p)
     assert len(rows) == 11

@@ -17,9 +17,39 @@ from .onboard import ROM_SECTOR_BASE, SECTOR_DIRECTORY, OnboardProfiles, is_blan
 BACKUP_FORMAT = 1
 
 
+# Data lives in %APPDATA%\Mousey. Folders used by earlier versions are still read
+# (never written, moved or cleaned up).
+DATA_DIR_NAME = "Mousey"
+LEGACY_DATA_DIR_NAMES = ["G502Configurator"]
+BACKUP_GLOB = "g502-backup-*.json"
+
+
+def _appdata() -> Path:
+    return Path(os.environ.get("APPDATA") or str(Path.home()))
+
+
+def data_dir() -> Path:
+    return _appdata() / DATA_DIR_NAME
+
+
+def legacy_data_dirs() -> list[Path]:
+    return [d for d in (_appdata() / n for n in LEGACY_DATA_DIR_NAMES) if d.is_dir()]
+
+
 def default_backup_dir() -> Path:
-    base = os.environ.get("APPDATA") or str(Path.home())
-    return Path(base) / "G502Configurator" / "backups"
+    return data_dir() / "backups"
+
+
+def backup_dirs(primary: Path | None = None) -> list[Path]:
+    """Where to look for backups: the current folder first, then older ones."""
+    dirs = [primary or default_backup_dir()] + [d / "backups" for d in legacy_data_dirs()]
+    return [d for i, d in enumerate(dirs) if d not in dirs[:i]]
+
+
+def list_backups(dirs: list[Path]) -> list[Path]:
+    """Backup files in all `dirs`, oldest first (file names carry the timestamp)."""
+    files = [f for d in dirs if d.is_dir() for f in d.glob(BACKUP_GLOB)]
+    return sorted(files, key=lambda f: f.name)
 
 
 def ghub_running() -> list[str]:
@@ -72,8 +102,14 @@ def take_backup(dev: Device, ob: OnboardProfiles) -> Backup:
     return Backup(meta, sectors)
 
 
-def save_backup(backup: Backup, directory: Path) -> Path:
+REASONS = {"manual": "Backup", "before-write": "Before a write", "before-restore": "Before a restore"}
+
+
+def save_backup(backup: Backup, directory: Path, reason: str | None = None) -> Path:
+    """Save as JSON. `reason` (a REASONS key) is stored so the timeline can label it."""
     directory.mkdir(parents=True, exist_ok=True)
+    if reason:
+        backup.meta["reason"] = reason
     stamp = datetime.fromisoformat(backup.meta["created"]).strftime("%Y%m%d-%H%M%S-%f")
     path = directory / f"g502-backup-{stamp}.json"
     doc = dict(backup.meta)

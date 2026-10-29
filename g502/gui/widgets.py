@@ -6,10 +6,27 @@ import copy
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QColorDialog, QComboBox, QCompleter, QDialog,
-                               QDialogButtonBox, QDoubleSpinBox, QFrame, QGridLayout, QHBoxLayout, QLabel,
-                               QPushButton, QRadioButton, QSlider, QSpinBox, QStackedWidget, QVBoxLayout,
-                               QWidget)
+from PySide6.QtWidgets import (
+    QButtonGroup,
+    QCheckBox,
+    QColorDialog,
+    QComboBox,
+    QCompleter,
+    QDialog,
+    QDialogButtonBox,
+    QDoubleSpinBox,
+    QFrame,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QRadioButton,
+    QSlider,
+    QSpinBox,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from .. import labels, model
 
@@ -24,6 +41,15 @@ def card(title: str | None = None) -> tuple[QFrame, QVBoxLayout]:
     if title:
         lay.addWidget(QLabel(title, objectName="Section"))
     return frame, lay
+
+
+def clear_layout(layout) -> None:
+    """Remove and delete every widget in `layout` (hidden at once, deleted later)."""
+    while layout.count():
+        w = layout.takeAt(0).widget()
+        if w is not None:
+            w.hide()
+            w.deleteLater()
 
 
 def hint(text: str) -> QLabel:

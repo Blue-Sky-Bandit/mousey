@@ -4,8 +4,18 @@ from __future__ import annotations
 
 from PySide6.QtCore import QEvent, Qt, QTimer
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QAbstractItemView, QDialog, QDialogButtonBox, QFrame, QHeaderView, QLabel,
-                               QListWidget, QTableWidget, QTableWidgetItem, QVBoxLayout)
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QDialog,
+    QDialogButtonBox,
+    QFrame,
+    QHeaderView,
+    QLabel,
+    QListWidget,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+)
 
 from .. import labels, model
 from .widgets import hint, key_from_event

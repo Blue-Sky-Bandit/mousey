@@ -33,7 +33,13 @@ def require_left_click(profile: dict) -> None:
 
 
 def default_library_dir() -> Path:
-    return backup.default_backup_dir().parent / "library"
+    return backup.data_dir() / "library"
+
+
+def library_dirs(primary: Path | None = None) -> list[Path]:
+    """The current library folder first, then any from earlier versions (read only)."""
+    dirs = [primary or default_library_dir()] + [d / "library" for d in backup.legacy_data_dirs()]
+    return [d for i, d in enumerate(dirs) if d not in dirs[:i]]
 
 
 @dataclass
@@ -92,10 +98,13 @@ def load_entry(path: Path) -> Entry:
     return Entry(doc["title"], doc.get("description", ""), doc["profile"], doc.get("created", ""), Path(path))
 
 
-def list_entries(directory: Path) -> tuple[list[Entry], list[str]]:
+def list_entries(directories: Path | list[Path]) -> tuple[list[Entry], list[str]]:
     """Entries newest first, plus a message for each file that couldn't be read."""
+    if isinstance(directories, Path):
+        directories = [directories]
     entries, problems = [], []
-    for path in sorted(directory.glob("*.json")) if directory.exists() else []:
+    paths = [f for d in directories if d.exists() for f in sorted(d.glob("*.json"))]
+    for path in paths:
         try:
             entries.append(load_entry(path))
         except (ValueError, KeyError, OSError, json.JSONDecodeError) as e:

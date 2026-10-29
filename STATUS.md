@@ -9,7 +9,7 @@
 | 3. Parse and export | **Done** (2026-10-29): byte-exact decode/encode of all 10 user + factory profiles; `export` command |
 | 4. Edit and write | **In progress**: `apply` built; physical mapping confirmed on profile 3 and restored; confirmed names and single-layer mode built (export format 2). Next: real edits, one approved write at a time |
 | 5. GUI | **In progress**: Mousey (PySide6) built; first write from it (user) persisted across unplug; live profile tracking added |
-| 6. Packaging | Not started |
+| 6. Packaging | **In progress**: `dist\Mousey.exe` (0.9.0) builds and passes its self-test (window + read-only mouse read); README, MIT LICENSE, CHANGELOG done; GitHub release not done (needs the user's account) |
 
 ## Next testing session (user away 2026-10-30; built and tested offline only)
 
@@ -35,7 +35,12 @@ backup before every write.
 8. **Restore from the app:** Restore backup… → pick the latest full backup → restore.
 9. **Power-up profile:** unplug and replug a couple of times from different profiles;
    does it always start on profile 1?
-10. **Packaged .exe** (after Phase 6): run it on this PC without the venv.
+10. **Packaged .exe:** run `dist\Mousey.exe` (built 2026-10-30, 0.9.0) on this PC without
+    the venv: check the icon in the title bar and taskbar, that it reads the mouse, and do
+    one small write and a restore from it.
+11. **Backups window:** open Backups…, check the timeline makes sense, restore an older
+    point to a spare profile, and check the new backup appears at the top.
+12. **Diagnostics:** More → Save diagnostics…, check the file reads sensibly.
 
 ## How to run
 
@@ -465,6 +470,35 @@ apply, so it can be fixed in Mousey. The CLI stays unrestricted.
 - No built-in presets: the user builds the library themselves (built-in game presets were
   tried and removed at the user's request, 2026-10-29).
 - Mouse's profile list re-read 2026-10-29 after the deactivation tests: all 5 active.
+
+## Phase 6: packaging and tidy-up (2026-10-30)
+
+- **Data folder:** `%APPDATA%\Mousey\backups` and `\library` for everything new. The old
+  `%APPDATA%\G502Configurator` folders are still read (backups list, timeline, latest
+  backup, library) but never written, moved or cleaned up. Backups now record why they
+  were made (`reason`: manual / before-write / before-restore).
+- **Backups window** (`g502/timeline.py`, `g502/gui/timeline_dialog.py`; header button
+  "Backups…"): every backup on a vertical timeline grouped by day, with what changed since
+  the one before (same wording as the write preview, via `session.describe_sector_change`),
+  which one matches the mouse now, and Restore / Show in folder / Open another file.
+- **Diagnostics** (`g502/diagnostics.py`; More → Save diagnostics…, `g502 diagnostics`):
+  versions, folders, Logitech processes, mouse state with sector status and SHA-256
+  prefixes, recent errors. No profile contents or backups.
+- **Code tidy-up:** `gui/app.py` (1,180 lines) split into `app.py` (window and state),
+  `common.py`, `sidebar.py`, `editor.py` (editing tabs), `device_ops.py` (status checks,
+  read, write, restore), `profile_tools.py` (tester, copy/swap/reset, library, JSON).
+  `pyproject.toml` with ruff config; `ruff check .` is clean. The CLI write flow was left as
+  it is (hardware-proven) rather than moved onto `session.execute`.
+- **Packaging:** `tools/build_exe.py` builds a one-file, windowed `dist\Mousey.exe` with
+  PyInstaller (icon, FLYHT Studios version info, assets, unused Qt modules excluded) and
+  runs `Mousey.exe --selftest` (add `--read-mouse` to include a read-only mouse read).
+  Version 0.9.0. Size ≈ 37 MB.
+- **Docs:** README.md (features, safety, troubleshooting incl. Dynamic Lighting and host
+  mode, CLI, building), LICENSE (MIT, FLYHT Studios), CHANGELOG.md.
+- **Branding check:** no Logitech logos; Logitech is named only to say which mouse it is
+  for, in the "not affiliated" notice, and in technical identifiers (USB vendor ID,
+  G Hub process names). The user's icon had a Logitech G, replaced by an "A".
+- **Not done:** GitHub repository and release (needs the user's account; nothing pushed).
 
 ## Environment notes
 

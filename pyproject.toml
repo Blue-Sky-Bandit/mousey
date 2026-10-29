@@ -1,0 +1,17 @@
+[project]
+name = "mousey"
+description = "Mousey by FLYHT Studios: onboard profile editor for the wired Logitech G502 HERO (unofficial)"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = ["hidapi>=0.14", "PySide6-Essentials>=6.7"]
+dynamic = ["version"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

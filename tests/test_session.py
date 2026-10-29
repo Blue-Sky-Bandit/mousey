@@ -71,3 +71,10 @@ def test_read_retries_once_after_timeout(monkeypatch):
     monkeypatch.setattr(session, "_read", fake)
     assert session.read_mouse(retry_delay=0) == "backup"
     assert len(calls) == 2
+
+
+def test_diagnostics_report_has_no_profile_contents(tmp_path):
+    from g502 import diagnostics
+    text = diagnostics.report(current(), True, ["2026-10-30 boom"], tmp_path, tmp_path)
+    assert "sector 0x0003: crc-ok" in text and "boom" in text
+    assert current().sectors[3].hex() not in text      # no raw profile data

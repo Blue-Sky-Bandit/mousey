@@ -104,7 +104,7 @@ def print_backup_summary(b: backup.Backup) -> None:
 def cmd_backup(dev: Device, args) -> None:
     ob = OnboardProfiles(dev)
     b = backup.take_backup(dev, ob)
-    path = backup.save_backup(b, Path(args.dir) if args.dir else backup.default_backup_dir())
+    path = backup.save_backup(b, Path(args.dir) if args.dir else backup.default_backup_dir(), "manual")
     print(f"Backed up {len(b.sectors)} sectors ({len(b.user_sectors())} user, {len(b.rom_sectors())} ROM):")
     print_backup_summary(b)
     problems = backup.check_backup(b)
@@ -192,7 +192,8 @@ def cmd_restore(dev: Device, args) -> int:
             print("Aborted: nothing was written.")
             return 1
 
-    safety = backup.save_backup(current, Path(args.dir) if args.dir else backup.default_backup_dir())
+    safety = backup.save_backup(current, Path(args.dir) if args.dir else backup.default_backup_dir(),
+                                "before-restore")
     print(f"\nPre-write backup of the mouse saved to {safety}")
     try:
         backup.execute_restore(ob, source, plan)
@@ -210,7 +211,8 @@ def print_profile_summary(doc: dict) -> None:
     for p in doc["profiles"]:
         dpi = p["dpi"]
         lv = dpi["levels"]
-        levels = ", ".join(f"[{v}]" if i == dpi["default_index"] else str(v) for i, v in enumerate(lv))             if isinstance(lv, list) else "raw"
+        levels = (", ".join(f"[{v}]" if i == dpi["default_index"] else str(v) for i, v in enumerate(lv))
+                  if isinstance(lv, list) else "raw")
         shift = lv[dpi["shift_index"]] if isinstance(lv, list) and dpi["shift_index"] < len(lv) else "?"
         leds = " / ".join(z.get("color", z["effect"]) if z["effect"] == "fixed" else z["effect"]
                           for z in p["lighting"].values())
@@ -278,7 +280,8 @@ def cmd_apply(dev: Device, args) -> int:
             print("Aborted: nothing was written.")
             return 1
 
-    safety = backup.save_backup(current, Path(args.dir) if args.dir else backup.default_backup_dir())
+    safety = backup.save_backup(current, Path(args.dir) if args.dir else backup.default_backup_dir(),
+                                "before-write")
     print(f"\nPre-write backup of the mouse saved to {safety}")
     target = backup.Backup(current.meta, plan.sectors)
     try:
@@ -306,6 +309,23 @@ def cmd_set_mode(dev: Device, args) -> int:
             return 1
     ob.set_mode(args.mode)
     print(f"Mode is now: {ob.get_mode()}")
+    return 0
+
+
+def cmd_diagnostics(args) -> int:
+    from . import diagnostics
+    source, errors = None, []
+    try:
+        with Device.open_first() as dev:
+            source = backup.take_backup(dev, OnboardProfiles(dev))
+    except (DeviceNotFound, FeatureMissing, HidppError, TimeoutError, OSError) as e:
+        errors.append(f"reading the mouse: {e}")
+    text = diagnostics.report(source, source is not None, errors)
+    if args.out:
+        Path(args.out).write_text(text, encoding="utf-8")
+        print(f"Saved to {Path(args.out).resolve()}")
+    else:
+        print(text)
     return 0
 
 
@@ -352,6 +372,9 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument("mode", choices=["onboard"])
     m.add_argument("--yes", action="store_true", help="skip the confirmation")
 
+    g = sub.add_parser("diagnostics", help="report versions, folders and the mouse's state for bug reports")
+    g.add_argument("-o", "--out", help="save the report here instead of printing it")
+
     sub.add_parser("gui", help="open the desktop app (any further options go to it, e.g. --backup FILE)",
                    add_help=False)
 
@@ -364,6 +387,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "verify-backup":
             return cmd_verify_backup(args)
+        if args.command == "diagnostics":
+            return cmd_diagnostics(args)
         if args.command == "export" and args.from_backup:
             return cmd_export(None, args)
         handlers = {"info": cmd_info, "dump": cmd_dump, "backup": cmd_backup, "restore": cmd_restore,

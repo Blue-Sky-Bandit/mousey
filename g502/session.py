@@ -17,7 +17,6 @@ from .backup import Backup
 from .device import Device
 from .onboard import SECTOR_DIRECTORY, OnboardProfiles
 
-
 # One conversation with the mouse at a time: the live profile check, reads and writes
 # all go through this lock so their HID++ replies can never get mixed up.
 DEVICE_LOCK = threading.Lock()
@@ -126,7 +125,8 @@ class WriteFailed(Exception):
         self.safety_backup = safety_backup
 
 
-def execute(plan: WritePlan, backup_dir: Path | None = None, log=lambda line: None) -> WriteResult:
+def execute(plan: WritePlan, backup_dir: Path | None = None, log=lambda line: None,
+            reason: str = "before-write") -> WriteResult:
     running = backup.ghub_running()
     if running:
         raise WriteFailed(f"G Hub is running ({', '.join(running)}) and can overwrite onboard profiles. "
@@ -139,7 +139,7 @@ def execute(plan: WritePlan, backup_dir: Path | None = None, log=lambda line: No
         if moved:
             raise MouseChanged("the mouse changed since the preview (sectors "
                                + ", ".join(str(s) for s in moved) + "); nothing was written. Preview again.")
-        safety = backup.save_backup(fresh, backup_dir or backup.default_backup_dir())
+        safety = backup.save_backup(fresh, backup_dir or backup.default_backup_dir(), reason)
         log(f"Pre-write backup saved to {safety}")
         try:
             backup.execute_restore(ob, Backup(fresh.meta, plan.sectors), plan.order, log=log)
@@ -154,29 +154,36 @@ def sector_label(sector: int) -> str:
     return "Profile list" if sector == SECTOR_DIRECTORY else f"Profile {sector}"
 
 
+def describe_sector_change(sector: int, old: bytes, new: bytes,
+                           button_count: int) -> list[tuple[str, str, str, str, str]]:
+    """(where, area, setting, before, after) rows for one sector going from `old` to
+    `new`, decoded from the bytes. Used by the write preview and the backup timeline."""
+    from . import labels, model
+    from .onboard import is_blank, parse_directory, sector_crc_ok
+
+    where = sector_label(sector)
+    if old == new:
+        return []
+    if sector == SECTOR_DIRECTORY:
+        before = {e.sector: e.enabled for e in parse_directory(old)}
+        after = {e.sector: e.enabled for e in parse_directory(new)}
+        state = {True: "Active", False: "Deactivated", None: "Not listed"}
+        return [(where, "Profiles", f"Profile {n}", state[before.get(n)], state[after.get(n)])
+                for n in sorted(set(before) | set(after)) if before.get(n) != after.get(n)]
+    if is_blank(old) or is_blank(new) or not (sector_crc_ok(old) and sector_crc_ok(new)):
+        return [(f"Sector {sector}", "", "Data changed (not a profile)", "", "")]
+    rows = [(where, *c) for c in labels.describe_changes(model.decode_profile(old, button_count),
+                                                         model.decode_profile(new, button_count))]
+    return rows or [(where, "", "Byte-level change only (see details)", "", "")]
+
+
 def describe_plan(plan: WritePlan, button_count: int) -> list[tuple[str, str, str, str, str]]:
     """(where, area, setting, before, after) rows describing what `plan` writes,
     decoded from the actual sector bytes, so the list matches what is written."""
-    from . import labels, model
-    from .onboard import parse_directory
-
     rows = []
     for s in plan.order:
         old, new = plan.planned_against.sectors[s], plan.sectors[s]
-        if s == SECTOR_DIRECTORY:
-            before = {e.sector: e.enabled for e in parse_directory(old)}
-            after = {e.sector: e.enabled for e in parse_directory(new)}
-            for n in sorted(set(before) | set(after)):
-                if before.get(n) != after.get(n):
-                    yes = {True: "Active", False: "Deactivated", None: "Not listed"}
-                    rows.append((sector_label(SECTOR_DIRECTORY), "Profiles", f"Profile {n}",
-                                 yes[before.get(n)], yes[after.get(n)]))
-            continue
-        changes = labels.describe_changes(model.decode_profile(old, button_count),
-                                          model.decode_profile(new, button_count))
         if old == new:
             rows.append((sector_label(s), "", "No change (identical data rewritten)", "", ""))
-        elif not changes:
-            rows.append((sector_label(s), "", "Byte-level change only (see details)", "", ""))
-        rows += [(sector_label(s), *c) for c in changes]
+        rows += describe_sector_change(s, old, new, button_count)
     return rows
