@@ -50,10 +50,20 @@ read-only on the mouse.
 
 ## Getting started
 
-1. Download `Mousey.exe` from the releases page and run it. No installation is needed.
-2. Mousey reads the mouse when it opens. Pick a profile on the left and change things in
+Mousey is portable: nothing is installed.
+
+1. Download `Mousey-<version>.zip` from the releases page.
+2. Right-click it → **Extract All…** and pick a folder to keep it in. (Running it from
+   inside the zip doesn't work.)
+3. Run `Mousey.exe` in the extracted `Mousey` folder. The first time, Windows may say
+   "Windows protected your PC" because the app isn't code-signed: click **More info →
+   Run anyway**. Optionally right-click `Mousey.exe` → **Pin to Start**.
+4. Mousey reads the mouse when it opens. Pick a profile on the left and change things in
    the Buttons, DPI, Lighting and Profile tabs.
-3. Press **Write to mouse…**, check the preview, and confirm.
+5. Press **Write to mouse…**, check the preview, and confirm.
+
+Keep `Mousey.exe` and its `_internal` folder together. To update, replace the folder with
+the new one; to remove Mousey, delete the folder.
 
 Your data is kept in `%APPDATA%\Mousey` (`backups` and `library`). Backups made by earlier
 versions in `%APPDATA%\G502Configurator` are still shown and can still be restored.
@@ -101,7 +111,7 @@ Development tools: `pip install pytest ruff pyinstaller`, then
 ```
 .venv\Scripts\python -m pytest          # tests (no mouse needed)
 .venv\Scripts\python -m ruff check .    # lint
-.venv\Scripts\python tools\build_exe.py # build dist\Mousey.exe and self-test it
+.venv\Scripts\python tools\build_exe.py # build dist\Mousey\ + Mousey-<version>.zip, self-tested
 .venv\Scripts\python tools\make_icon.py # rebuild the icon files from mousey-source.png
 ```
 

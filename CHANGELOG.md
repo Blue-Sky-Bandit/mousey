@@ -2,7 +2,8 @@
 
 ## 0.9.0 (beta), 2026-10-30
 
-First packaged build of Mousey (`Mousey.exe`).
+First packaged build of Mousey: a portable zip (`Mousey-0.9.0.zip`) containing the
+`Mousey` folder. Extract it and run `Mousey.exe`; nothing is installed.
 
 - Read, back up and restore the G502 HERO's onboard memory, byte for byte, with checks.
 - Edit buttons (with left click locked), G-Shift or single-layer mode, DPI steps, polling

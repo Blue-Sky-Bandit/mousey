@@ -9,7 +9,7 @@
 | 3. Parse and export | **Done** (2026-10-29): byte-exact decode/encode of all 10 user + factory profiles; `export` command |
 | 4. Edit and write | **In progress**: `apply` built; physical mapping confirmed on profile 3 and restored; confirmed names and single-layer mode built (export format 2). Next: real edits, one approved write at a time |
 | 5. GUI | **In progress**: Mousey (PySide6) built; first write from it (user) persisted across unplug; live profile tracking added |
-| 6. Packaging | **In progress**: `dist\Mousey.exe` (0.9.0) builds and passes its self-test (window + read-only mouse read); README, MIT LICENSE, CHANGELOG done; GitHub release not done (needs the user's account) |
+| 6. Packaging | **In progress**: portable one-folder zip `dist\Mousey-0.9.0.zip` builds and passes its self-test (window + read-only mouse read); README, MIT LICENSE, CHANGELOG done; video splash waiting on the user's file; installer deferred; GitHub release not done (needs the user's account) |
 
 ## Next testing session (user away 2026-10-30; built and tested offline only)
 
@@ -35,9 +35,11 @@ backup before every write.
 8. **Restore from the app:** Restore backup… → pick the latest full backup → restore.
 9. **Power-up profile:** unplug and replug a couple of times from different profiles;
    does it always start on profile 1?
-10. **Packaged .exe:** run `dist\Mousey.exe` (built 2026-10-30, 0.9.0) on this PC without
-    the venv: check the icon in the title bar and taskbar, that it reads the mouse, and do
-    one small write and a restore from it.
+10. **Packaged app:** extract `dist\Mousey-0.9.0.zip` somewhere (e.g. Documents) and run
+    `Mousey\Mousey.exe` without the venv: check the icon in the title bar and taskbar, the
+    start-up speed, that it reads the mouse, and do one small write and a restore. Also try
+    double-clicking `Mousey.exe` inside the zip without extracting, to see what Windows
+    shows (expected: an error from the launcher, since `_internal` isn't next to it).
 11. **Backups window:** open Backups…, check the timeline makes sense, restore an older
     point to a spare profile, and check the new backup appears at the top.
 12. **Diagnostics:** More → Save diagnostics…, check the file reads sensibly.
@@ -489,10 +491,26 @@ apply, so it can be fixed in Mousey. The CLI stays unrestricted.
   read, write, restore), `profile_tools.py` (tester, copy/swap/reset, library, JSON).
   `pyproject.toml` with ruff config; `ruff check .` is clean. The CLI write flow was left as
   it is (hardware-proven) rather than moved onto `session.execute`.
-- **Packaging:** `tools/build_exe.py` builds a one-file, windowed `dist\Mousey.exe` with
-  PyInstaller (icon, FLYHT Studios version info, assets, unused Qt modules excluded) and
-  runs `Mousey.exe --selftest` (add `--read-mouse` to include a read-only mouse read).
-  Version 0.9.0. Size ≈ 37 MB.
+- **Packaging (decided 2026-10-30): portable one-folder zip.** `tools/build_exe.py`
+  builds `dist\Mousey\` (`Mousey.exe` + `_internal\`, plus `START HERE.txt` and
+  `LICENSE.txt`) with PyInstaller (windowed, icon, FLYHT Studios version info, unused Qt
+  modules excluded), runs `Mousey.exe --selftest` (`--read-mouse` adds a read-only mouse
+  read), and only then zips it as `dist\Mousey-<version>.zip` with a single `Mousey` folder
+  at the top. 0.9.0: folder ≈ 94 MB, zip ≈ 37 MB; extracted from the zip it builds its
+  window in 0.8 s. Chosen over the one-file .exe because nothing is unpacked at each
+  launch (faster start, a video splash can show first, fewer antivirus false positives).
+- **Installer: not now, kept as an option.** The one-folder build is exactly what an
+  installer (e.g. Inno Setup: Program Files, Start menu, uninstaller) would package, so
+  it can be added later without changing the app.
+- **Splash (planned, waiting on the user's video):** the user is making a video splash
+  with space left for the version and a loading bar/status. Plan: the user exports it as
+  an animated WebP (Qt plays it with what's already bundled; MP4 would need Qt
+  Multimedia + FFmpeg, roughly +50–100 MB); Mousey shows it in a borderless window as soon
+  as Qt starts and draws the version and progress into the reserved area. Still needed
+  from the user: the file, its size, where the reserved area is, and whether it plays once
+  or loops until Mousey is ready. Nothing built for it yet.
+- **Running from inside the zip** can't be caught by Mousey: the launcher fails to find
+  `_internal` before any of Mousey's code runs. Covered by `START HERE.txt` and the README.
 - **Docs:** README.md (features, safety, troubleshooting incl. Dynamic Lighting and host
   mode, CLI, building), LICENSE (MIT, FLYHT Studios), CHANGELOG.md.
 - **Branding check:** no Logitech logos; Logitech is named only to say which mouse it is
