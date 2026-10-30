@@ -40,6 +40,7 @@ from .editor import EditorMixin
 from .library_page import LibraryPage
 from .profile_tools import ToolsMixin
 from .sidebar import ProfileRow
+from .splash import Splash
 from .widgets import clear_layout, hint
 
 
@@ -452,6 +453,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--backup", help="open this backup file (view only) instead of reading the mouse")
     p.add_argument("--dir", help="backup folder")
     p.add_argument("--theme", choices=["auto", "light", "dark"], default="auto")
+    p.add_argument("--no-splash", action="store_true", help="skip the start-up animation")
     p.add_argument("--selftest", metavar="REPORT", help=argparse.SUPPRESS)
     p.add_argument("--selftest-read", action="store_true", help=argparse.SUPPRESS)
     args = p.parse_args(argv)
@@ -466,12 +468,57 @@ def main(argv: list[str] | None = None) -> int:
     app.setOrganizationName(STUDIO)
     app.setWindowIcon(app_icon())
     tokens = style.apply_theme(app, None if args.theme == "auto" else args.theme == "dark")
+    if args.no_splash:
+        win = MainWindow(Path(args.dir) if args.dir else None, tokens)
+        win.show()
+        if args.backup:
+            win.load(backup.load_backup(Path(args.backup)), False)
+        else:
+            win.read_from_mouse()
+        return app.exec()
+    return run_with_splash(app, args, tokens)
+
+
+def run_with_splash(app: QApplication, args, tokens: dict) -> int:
+    """Show the splash (always the full animation), load during it, then open the window."""
+    splash = Splash()
+    splash.start()
+    app.processEvents()
     win = MainWindow(Path(args.dir) if args.dir else None, tokens)
-    win.show()
+    result: dict = {}
+
+    def open_window() -> None:
+        splash.close()
+        win.show()
+        if "backup" in result:
+            win.load(result["backup"], result["connected"])
+        elif "error" in result:
+            win._read_failed(result["error"])      # falls back to the newest backup and explains
+
+    splash.finished.connect(open_window)
     if args.backup:
-        win.load(backup.load_backup(Path(args.backup)), False)
+        splash.set_status("Opening the backup…")
+        try:
+            result.update(backup=backup.load_backup(Path(args.backup)), connected=False)
+        except (ValueError, KeyError, OSError) as e:
+            result["error"] = e
+        splash.set_loaded("Ready")
     else:
-        win.read_from_mouse()
+        splash.set_status("Reading the mouse…")
+
+        def done(b) -> None:
+            result.update(backup=b, connected=True)
+            splash.set_loaded("Ready")
+
+        def failed(e) -> None:
+            result["error"] = e
+            splash.set_loaded("Mouse not found" if isinstance(e, DeviceNotFound) else "Couldn't read the mouse")
+
+        task = Task(session.read_mouse)
+        task.signals.done.connect(done)
+        task.signals.failed.connect(failed)
+        result["task"] = task                      # keep it alive until it reports
+        win.pool.start(task)
     return app.exec()
 
 
@@ -485,6 +532,8 @@ def selftest(report: Path, read_mouse: bool = False) -> int:
         tokens = style.apply_theme(app, True)
         win = MainWindow(None, tokens)
         lines.append(f"assets: {ASSETS} exists={ASSETS.is_dir()} icon={not app_icon().isNull()}")
+        splash = Splash()
+        lines.append(f"splash: valid={splash.movie.isValid()} frames={splash.frames}")
         path = latest_backup(backup.default_backup_dir())
         if path:
             win.load(backup.load_backup(path), False)

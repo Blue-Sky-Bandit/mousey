@@ -182,3 +182,15 @@ def test_tester_dialog_opens(win):
     d._received({"type": "mouse", "buttons": [2]})
     assert d.table.item(1, 2).text() == "✓"
     assert "Right click" in d.log.item(0).text()
+
+
+def test_splash_plays_once_and_waits_for_loading(qapp):
+    from g502.gui.splash import Splash
+    s = Splash()
+    assert s.movie.isValid() and s.frames == 120
+    done = []
+    s.finished.connect(lambda: done.append(True))
+    s._frame(s.frames - 1)                     # animation reached its last frame
+    assert s.played and not s.loaded and s.progress() <= 0.92
+    s.set_loaded("Ready")
+    assert s.loaded and s.status == "Ready"

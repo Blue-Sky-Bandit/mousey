@@ -14,6 +14,7 @@ First packaged build of Mousey: a portable zip (`Mousey-0.9.0.zip`) containing t
 - Profile library, copy/swap between slots, reset to factory settings.
 - Backups window with a timeline of restore points and what changed in each.
 - Button tester and a diagnostics report.
+- Start-up splash: the FLYHT Studios animation with version and loading progress.
 - Data folder is now `%APPDATA%\Mousey`; backups in the old `%APPDATA%\G502Configurator`
   folder are still listed and restorable.
 - Command-line tool (`python -m g502`) for scripting and recovery.

@@ -43,6 +43,9 @@ backup before every write.
 11. **Backups window:** open Backups…, check the timeline makes sense, restore an older
     point to a spare profile, and check the new backup appears at the top.
 12. **Diagnostics:** More → Save diagnostics…, check the file reads sensibly.
+13. **Splash:** start Mousey with the mouse plugged in and unplugged; check the animation
+    is smooth and lasts about 4 s, the status text and bar look right, and the window
+    opens afterwards (with the "No G502 HERO found" message when unplugged).
 
 ## How to run
 
@@ -502,13 +505,16 @@ apply, so it can be fixed in Mousey. The CLI stays unrestricted.
 - **Installer: not now, kept as an option.** The one-folder build is exactly what an
   installer (e.g. Inno Setup: Program Files, Start menu, uninstaller) would package, so
   it can be added later without changing the app.
-- **Splash (planned, waiting on the user's video):** the user is making a video splash
-  with space left for the version and a loading bar/status. Plan: the user exports it as
-  an animated WebP (Qt plays it with what's already bundled; MP4 would need Qt
-  Multimedia + FFmpeg, roughly +50–100 MB); Mousey shows it in a borderless window as soon
-  as Qt starts and draws the version and progress into the reserved area. Still needed
-  from the user: the file, its size, where the reserved area is, and whether it plays once
-  or loops until Mousey is ready. Nothing built for it yet.
+- **Splash (built 2026-10-31):** the user's FLYHT Studios neon-sign animation,
+  `g502/gui/assets/splash.webp` (animated WebP, 640x360, 120 frames, 30 fps, 4.0 s,
+  1.5 MB; played with Qt's bundled WebP support). `g502/gui/splash.py` shows it in a
+  borderless window; the mouse is read during it. Per the user it **always plays the full
+  4 s** and holds the last frame; the window opens once the animation is done and loading
+  has finished (measured: 4.3 s from launch). Overlay in the dark bottom strip: status
+  text ("Reading the mouse…" / "Ready" / "Mouse not found"), a cyan loading bar that
+  follows the animation's time and only completes when loading is done, and "Mousey
+  0.9.0" bottom-left. Frames are chosen by the clock (QMovie's own timer ran ~15% slow).
+  `--no-splash` skips it. Read errors are shown after the window opens.
 - **Running from inside the zip** can't be caught by Mousey: the launcher fails to find
   `_internal` before any of Mousey's code runs. Covered by `START HERE.txt` and the README.
 - **Docs:** README.md (features, safety, troubleshooting incl. Dynamic Lighting and host
