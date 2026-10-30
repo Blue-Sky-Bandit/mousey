@@ -11,41 +11,10 @@
 | 5. GUI | **In progress**: Mousey (PySide6) built; first write from it (user) persisted across unplug; live profile tracking added |
 | 6. Packaging | **In progress**: portable one-folder zip `dist\Mousey-0.9.0.zip` builds and passes its self-test (window + read-only mouse read); README, MIT LICENSE, CHANGELOG done; video splash waiting on the user's file; installer deferred; GitHub release not done (needs the user's account) |
 
-## Next testing session (user away 2026-10-30; built and tested offline only)
+## Next testing session
 
-Do these in Mousey with G Hub closed. Each write gets the normal preview; the app takes a
-backup before every write.
-
-1. **Single-layer key on sniper:** G-Shift off, sniper → a key (e.g. F). Write, then check
-   it types in Notepad (or the Button tester).
-2. **G-Shift with a second-layer action:** G-Shift on (sniper holds it), set one G-Shift
-   action (e.g. thumb back → Ctrl+C). Write, hold sniper and check it.
-3. **DPI change:** change a DPI level on the profile in use; check the feel and the DPI
-   lights stepping.
-4. **Button tester:** More → Button tester (or Buttons tab → Test buttons…). Check each
-   button ticks its row; check **wheel tilt left/right are reported the right way round**
-   (the left/right direction from Windows is a guess in the code).
-5. **Copy / swap:** copy one profile to another and swap two; write and check on the mouse.
-6. **Factory reset:** reset a spare profile to factory, write, and check it. Factory
-   profiles store lighting brightness **0** for the colour cycle; see what the lights do
-   (off? full?) and note it.
-7. **Mode guard:** only if the mouse is ever found in host mode (e.g. after G Hub): the
-   app shows a banner with **Switch to onboard memory**; that switch has never been run
-   on this mouse. CLI equivalent: `python -m g502 set-mode onboard`.
-8. **Restore from the app:** Restore backup… → pick the latest full backup → restore.
-9. **Power-up profile:** unplug and replug a couple of times from different profiles;
-   does it always start on profile 1?
-10. **Packaged app:** extract `dist\Mousey-0.9.0.zip` somewhere (e.g. Documents) and run
-    `Mousey\Mousey.exe` without the venv: check the icon in the title bar and taskbar, the
-    start-up speed, that it reads the mouse, and do one small write and a restore. Also try
-    double-clicking `Mousey.exe` inside the zip without extracting, to see what Windows
-    shows (expected: an error from the launcher, since `_internal` isn't next to it).
-11. **Backups window:** open Backups…, check the timeline makes sense, restore an older
-    point to a spare profile, and check the new backup appears at the top.
-12. **Diagnostics:** More → Save diagnostics…, check the file reads sensibly.
-13. **Splash:** start Mousey with the mouse plugged in and unplugged; check the animation
-    is smooth and lasts about 4 s, the status text and bar look right, and the window
-    opens afterwards (with the "No G502 HERO found" message when unplugged).
+The full step-by-step plan is in **TESTING.md** (21 tests: start-up and reading, writes
+on profile 3, restore, power-up and recovery). Results go back into this file afterwards.
 
 ## How to run
 
