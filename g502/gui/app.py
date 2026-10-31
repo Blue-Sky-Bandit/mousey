@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
+    QStackedWidget,
     QStatusBar,
     QTabWidget,
     QToolButton,
@@ -41,7 +42,7 @@ from .library_page import LibraryPage
 from .profile_tools import ToolsMixin
 from .sidebar import ProfileRow
 from .splash import Splash
-from .widgets import clear_layout, hint
+from .widgets import clear_layout, hint, layout_chars
 
 
 class MainWindow(EditorMixin, DeviceMixin, ToolsMixin, QMainWindow):
@@ -64,6 +65,7 @@ class MainWindow(EditorMixin, DeviceMixin, ToolsMixin, QMainWindow):
         self.active = None
         self.mode = None
         self.errors: list[str] = []   # recent errors, for the diagnostics report
+        self.tester = None            # the open button tester, which follows the profile in use
         self.plugged = False          # mouse answered the last check
         self.follow_mouse = True      # re-read automatically when it is plugged back in
         self._polling = False
@@ -167,7 +169,10 @@ class MainWindow(EditorMixin, DeviceMixin, ToolsMixin, QMainWindow):
         self.library_page.delete_requested.connect(self.delete_from_library)
         self.library_page.open_folder_requested.connect(self.open_library_folder)
         self.tabs.addTab(self._scroll(self.library_page), "Library")
-        main.addWidget(self.tabs, 1)
+        self.pages = QStackedWidget()
+        self.pages.addWidget(self._waiting_page())
+        self.pages.addWidget(self.tabs)
+        main.addWidget(self.pages, 1)
         holder = QWidget()
         holder.setLayout(main)
         body.addWidget(holder, 1)
@@ -203,7 +208,30 @@ class MainWindow(EditorMixin, DeviceMixin, ToolsMixin, QMainWindow):
 
 
     # ---- state ----------------------------------------------------------------------
+    def _waiting_page(self) -> QWidget:
+        """Shown when there's nothing to edit yet: no mouse and no backup to show."""
+        page = QWidget()
+        lay = QVBoxLayout(page)
+        lay.setContentsMargins(0, 60, 0, 0)
+        lay.setSpacing(10)
+        icon = QLabel()
+        icon.setPixmap(QPixmap(str(ASSETS / "mousey-256.png")).scaled(
+            96, 96, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        lay.addWidget(icon, 0, Qt.AlignHCenter)
+        title = QLabel("Plug in your G502 HERO", objectName="Title")
+        lay.addWidget(title, 0, Qt.AlignHCenter)
+        text = hint("Connect the mouse with its cable. Mousey reads it as soon as it's plugged in, and "
+                    "nothing on the mouse changes until you press Write to mouse.")
+        text.setAlignment(Qt.AlignHCenter)
+        text.setFixedWidth(460)
+        lay.addWidget(text, 0, Qt.AlignHCenter)
+        lay.addWidget(QLabel("Mousey works with the wired Logitech G502 HERO.", objectName="Muted"), 0,
+                      Qt.AlignHCenter)
+        lay.addStretch(1)
+        return page
+
     def _set_loaded(self, loaded: bool) -> None:
+        self.pages.setCurrentIndex(1 if loaded else 0)
         for w in (self.tabs, self.revert_btn, self.revert_all_btn, self.write_btn):
             w.setEnabled(loaded)
         self.export_act.setEnabled(loaded)
@@ -463,6 +491,7 @@ def main(argv: list[str] | None = None) -> int:
         # Own taskbar entry and icon instead of being grouped under python.exe.
         import ctypes
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_ID)
+    labels.use_layout(layout_chars())
     app = QApplication.instance() or QApplication(sys.argv[:1])
     app.setApplicationName(APP_NAME)
     app.setOrganizationName(STUDIO)
@@ -475,8 +504,21 @@ def main(argv: list[str] | None = None) -> int:
             win.load(backup.load_backup(Path(args.backup)), False)
         else:
             win.read_from_mouse()
-        return app.exec()
-    return run_with_splash(app, args, tokens)
+        return _shutdown(app, app.exec())
+    return _shutdown(app, run_with_splash(app, args, tokens))
+
+
+def _shutdown(app: QApplication, code: int) -> int:
+    """Delete the windows while Qt is still whole. Left to Python's exit, Qt's objects are
+    torn down in no particular order, which crashed on exit now and then."""
+    import shiboken6
+    for w in app.topLevelWidgets():
+        w.hide()
+    QThreadPool.globalInstance().waitForDone(5000)     # a status check may be under way
+    for w in app.topLevelWidgets():
+        if shiboken6.isValid(w):
+            shiboken6.delete(w)
+    return code
 
 
 def run_with_splash(app: QApplication, args, tokens: dict) -> int:
@@ -534,6 +576,7 @@ def selftest(report: Path, read_mouse: bool = False) -> int:
         lines.append(f"assets: {ASSETS} exists={ASSETS.is_dir()} icon={not app_icon().isNull()}")
         splash = Splash()
         lines.append(f"splash: valid={splash.movie.isValid()} frames={splash.frames}")
+        lines += diagnostics.folders(None, None)
         path = latest_backup(backup.default_backup_dir())
         if path:
             win.load(backup.load_backup(path), False)
@@ -552,4 +595,5 @@ def selftest(report: Path, read_mouse: bool = False) -> int:
         lines.append(f"FAILED: {e}\n{traceback.format_exc()}")
         code = 1
     report.write_text("\n".join(lines), encoding="utf-8")
-    return code
+    app = QApplication.instance()
+    return _shutdown(app, code) if app else code

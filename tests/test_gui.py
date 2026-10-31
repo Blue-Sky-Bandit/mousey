@@ -194,3 +194,65 @@ def test_splash_plays_once_and_waits_for_loading(qapp):
     assert s.played and not s.loaded and s.progress() <= 0.92
     s.set_loaded("Ready")
     assert s.loaded and s.status == "Ready"
+
+
+def test_tester_follows_profile_in_use(win):
+    from g502.gui.tester import ButtonTesterDialog
+    win.load(current(), connected=True)
+    win.poll_timer.stop()
+    win._poll_done(session.Status(2, "onboard"))
+    win.tester = ButtonTesterDialog(*win._tester_profile(), win.tokens, win)
+    assert "Profile 2" in win.tester.testing.text()
+    win.tester._received({"type": "mouse", "buttons": [2]})
+    win._poll_done(session.Status(3, "onboard"))
+    assert "Profile 3" in win.tester.testing.text()
+    assert win.tester.table.item(1, 2).text() == ""            # ticks start again
+    assert "Now testing Profile 3" in win.tester.log.item(0).text()
+
+
+def test_keys_read_by_position_not_layout(qapp):
+    from g502.gui.widgets import key_from_event
+
+    class Event:                                # what Qt reports on a UK layout
+        def __init__(self, scan, vk):
+            self.scan, self.vk = scan, vk
+
+        def nativeScanCode(self):
+            return self.scan
+
+        def nativeVirtualKey(self):
+            return self.vk
+
+        def key(self):
+            return 0
+    assert key_from_event(Event(0x2B, 0xDE)) == "backslash"      # UK # key: VK says apostrophe
+    assert key_from_event(Event(0x28, 0xC0)) == "apostrophe"     # UK ' key: VK says grave
+    assert key_from_event(Event(0xE048, 0x26)) == "up"
+    assert key_from_event(Event(0x45, 0x90)) == "num_lock"
+    assert key_from_event(Event(0x1D, 0xA2)) is None             # modifiers alone aren't keys
+
+
+def test_key_labels_follow_layout():
+    from g502 import labels
+    before = labels.key_label("backslash")
+    try:
+        labels.use_layout({"backslash": "#", "slash": ""})
+        assert labels.key_label("backslash") == "#"
+        assert labels.key_label("slash") == "/"
+    finally:
+        labels.use_layout({"backslash": before})
+
+
+def test_waiting_page_without_mouse_or_backups(qapp, tmp_path, monkeypatch):
+    from g502.device import DeviceNotFound
+    from g502.gui import device_ops
+    monkeypatch.setenv("APPDATA", str(tmp_path))               # no older folders with backups either
+    monkeypatch.setattr(device_ops, "QMessageBox", None)       # no pop-up expected
+    monkeypatch.setattr(gui, "QMessageBox", None)
+    w = gui.MainWindow(tmp_path / "empty", style.apply_theme(qapp, dark=True), library_dir=tmp_path / "library")
+    assert w.pages.currentIndex() == 0
+    w._read_failed(DeviceNotFound("none"))
+    w.poll_timer.stop()
+    assert w.pages.currentIndex() == 0 and "Waiting" in w.statusBar().currentMessage()
+    w.load(current(), connected=False)
+    assert w.pages.currentIndex() == 1

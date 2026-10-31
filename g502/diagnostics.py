@@ -45,7 +45,7 @@ def _versions() -> list[str]:
     return lines
 
 
-def _folders(backup_dir: Path | None, library_dir: Path | None) -> list[str]:
+def folders(backup_dir: Path | None, library_dir: Path | None) -> list[str]:
     lines = []
     for d in backup.backup_dirs(backup_dir):
         lines.append(f"Backups: {d} ({len(backup.list_backups([d]))} files)")
@@ -80,7 +80,7 @@ def report(source: Backup | None, connected: bool, errors: list[str] = (), backu
            library_dir: Path | None = None) -> str:
     sections = [
         ("Versions", _versions()),
-        ("Folders", _folders(backup_dir, library_dir)),
+        ("Folders", folders(backup_dir, library_dir)),
         ("Logitech software running", logitech_processes() or ["none"]),
         ("Mouse", _mouse(source, connected)),
         ("Recent errors", list(errors) or ["none"]),

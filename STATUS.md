@@ -11,10 +11,47 @@
 | 5. GUI | **In progress**: Mousey (PySide6) built; first write from it (user) persisted across unplug; live profile tracking added |
 | 6. Packaging | **In progress**: portable one-folder zip `dist\Mousey-0.9.0.zip` builds and passes its self-test (window + read-only mouse read); README, MIT LICENSE, CHANGELOG done; video splash waiting on the user's file; installer deferred; GitHub release not done (needs the user's account) |
 
-## Next testing session
+## Testing session 1 (user, 2026-10-31, packaged 0.9.0 from the zip)
 
-The full step-by-step plan is in **TESTING.md** (21 tests: start-up and reading, writes
-on profile 3, restore, power-up and recovery). Results go back into this file afterwards.
+All 20 tests run; 21 (host-mode recovery) skipped as planned. Everything wrote, previewed
+and restored as expected. Results:
+
+- **Zip:** running `Mousey.exe` inside the zip gives Explorer's own prompt: "This
+  application may depend on other compressed files in this folder. For the application to
+  run properly, it is recommended that you first extract the files." (Extract all / Run /
+  Cancel). Quoted in README and START HERE.
+- **SmartScreen:** no blocking dialog. Windows showed a corner notification that a
+  security scan was needed and the app opened anyway.
+- **Splash, icon, taskbar entry, pin to taskbar:** all fine.
+- **Backups / diagnostics:** new folder used. The 29 Oct backups did **not** appear. Cause:
+  not Mousey. Earlier dev runs were started from the Claude desktop app, which is an MSIX
+  package, so Windows redirected their new `%APPDATA%` folder (and the QSettings registry
+  key with the mouse's name) into
+  `%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\G502Configurator`. Only
+  processes started from Claude see it. That's also why the mouse name had "reset". Real
+  users never hit this. The 22 old backups are still there, untouched.
+- **Live tracking, safety locks (left click, in-use profile), single-layer sniper key,
+  G-Shift layer with Ctrl+V, DPI, breathing + DPI lights off, library save/load/undo,
+  swap, restore from the Backups window, splash with no mouse + auto-read on plug-in:**
+  all worked.
+- **Wheel tilt direction in the tester:** correct (left = left).
+- **Button tester names wrong (fixed):** on Finals, thumb back showed as "DPI up" and DPI
+  up as "not one of this profile's actions". This PC's active keyboard layout is **UK**
+  (0x0809, although Settings lists US), and the tester turned keys into names through
+  the layout: the mouse's `\` arrives as UK `#` (VK_OEM_7, read as apostrophe) and `'` as
+  VK_OEM_3 (read as grave). Keys are now read by scan code, which doesn't depend on the
+  layout (key capture in the binding editor too). Key labels show what the key types in
+  the PC's layout, e.g. `\` shows as `#` on a UK layout.
+- **Tester didn't follow profile changes (fixed):** it now switches to the new profile in
+  use (and clears its ticks) when the profile button is pressed.
+- **Factory reset of profile 3:** worked; lights went solid white. That's correct: factory
+  profile 3 is *fixed #FFFFFF* in ROM. Brightness 0 only appears in factory profiles 1
+  (colour cycle) and 2 (breathing), so what brightness 0 does is still unknown.
+- **Power-up profile:** 3 of 3 times the mouse came back on the profile it was unplugged
+  on (not profile 1). The 29 Oct "came back on profile 1" remains unexplained.
+
+Still to check: the tester on Finals again (with the layout fix), factory profiles 1/2
+lighting, host-mode recovery if it ever happens. See TESTING.md.
 
 ## How to run
 
@@ -223,8 +260,9 @@ hint to re-export.
 
 **LEDs** (11 bytes): `00` off · `01 RGB` fixed · `03 …5×00 period(BE) brightness` cycle ·
 `0A RGB period(BE) waveform brightness` breathing. **Confirmed 2026-10-29:** zone 0 is
-the logo, zone 1 is the DPI indicator lights. Factory profiles have brightness 0, user
-profiles 100; what 0 means is not confirmed.
+the logo, zone 1 is the DPI indicator lights. Factory profiles 1 and 2 have brightness 0
+(cycle, breathing), user profiles 100; what 0 means is not confirmed. Factory profile 3 is
+fixed white (confirmed 2026-10-31).
 
 **Safety of the model**: any field whose decoding would not re-encode exactly (unknown
 binding type, unknown LED effect, odd padding) is kept as raw hex, so export → encode never
@@ -388,8 +426,8 @@ Toolkit: PySide6, chosen by the user for a polished look (over Tkinter). Install
   change, but a read-only backup (`g502-backup-20261029-205010-260180.json`) shows sector 3
   still holds the new colour, the only difference from the pre-write backup. **Writes
   survive power loss.** The mouse came back up on **profile 1** (DPI index 3 = profile 1's
-  default), not profile 3, so the change wasn't visible. Whether it always powers up on
-  profile 1 is not confirmed.
+  default), not profile 3, so the change wasn't visible. On 2026-10-31 it came back on
+  the profile it was unplugged on, 3 of 3 times, so "always profile 1" is not the rule.
 - The first read right after replugging failed with "No reply to feature index 0x0C
   function 5" (memory read timeout); the next reads worked. Likely the mouse still
   starting up.

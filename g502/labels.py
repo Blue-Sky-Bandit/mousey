@@ -63,6 +63,14 @@ _KEY_SPECIAL = {
 }
 
 
+def use_layout(chars: dict[str, str]) -> None:
+    """Label punctuation keys with what they type in the PC's keyboard layout (from the GUI),
+    e.g. the key a US keyboard calls backslash types # with a UK layout."""
+    for name, char in chars.items():
+        if name in _KEY_SPECIAL and len(char) == 1 and char.isprintable() and not char.isspace():
+            _KEY_SPECIAL[name] = char
+
+
 def key_label(name: str) -> str:
     if name in _KEY_SPECIAL:
         return _KEY_SPECIAL[name]

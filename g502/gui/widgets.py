@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import sys
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
@@ -98,12 +99,34 @@ _VK.update({0x60 + i: f"kp_{i}" for i in range(10)})
 _VK.update({0x70 + i: f"f{i + 1}" for i in range(24)})
 _MODIFIER_VKS = {0x10, 0x11, 0x12, 0x5B, 0x5C, 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5}
 
+# Scan codes (set 1, extended keys as 0xE0xx) -> HID key names. Unlike virtual-key codes
+# these don't depend on the keyboard layout, and they're what the mouse's HID key codes
+# turn into, so a key reads the same whatever layout Windows is using.
+_SCAN = {0x01: "escape", 0x0C: "minus", 0x0D: "equal", 0x0E: "backspace", 0x0F: "tab", 0x1A: "left_bracket",
+         0x1B: "right_bracket", 0x1C: "enter", 0x27: "semicolon", 0x28: "apostrophe", 0x29: "grave",
+         0x2B: "backslash", 0x33: "comma", 0x34: "period", 0x35: "slash", 0x37: "kp_multiply", 0x39: "space",
+         0x3A: "caps_lock", 0x46: "scroll_lock", 0x47: "kp_7", 0x48: "kp_8", 0x49: "kp_9", 0x4A: "kp_minus",
+         0x4B: "kp_4", 0x4C: "kp_5", 0x4D: "kp_6", 0x4E: "kp_plus", 0x4F: "kp_1", 0x50: "kp_2", 0x51: "kp_3",
+         0x52: "kp_0", 0x53: "kp_period", 0x56: "non_us_backslash", 0x57: "f11", 0x58: "f12", 0x76: "f24",
+         0xE01C: "kp_enter", 0xE035: "kp_divide", 0xE037: "print_screen", 0xE047: "home", 0xE048: "up",
+         0xE049: "page_up", 0xE04B: "left", 0xE04D: "right", 0xE04F: "end", 0xE050: "down",
+         0xE051: "page_down", 0xE052: "insert", 0xE053: "delete", 0xE05D: "menu"}
+_SCAN.update({0x02 + i: str((i + 1) % 10) for i in range(10)})
+for _row, _start in (("qwertyuiop", 0x10), ("asdfghjkl", 0x1E), ("zxcvbnm", 0x2C)):
+    _SCAN.update({_start + i: c for i, c in enumerate(_row)})
+_SCAN.update({0x3B + i: f"f{i + 1}" for i in range(10)})
+_SCAN.update({0x64 + i: f"f{i + 13}" for i in range(11)})
+_SCAN.update({0x100 | (k & 0xFF): v for k, v in list(_SCAN.items()) if k > 0xFF})   # other extended form
+_BY_VK = {0x13, 0x90}       # Pause and Num Lock share a scan code; their virtual keys differ
+
 
 def key_from_event(event) -> str | None:
     vk = event.nativeVirtualKey()
     if vk in _MODIFIER_VKS:
         return None
-    name = _VK.get(vk)
+    name = None if vk in _BY_VK else _SCAN.get(event.nativeScanCode())
+    if name is None:
+        name = _VK.get(vk)
     if name is None:
         k = event.key()
         if Qt.Key_A <= k <= Qt.Key_Z:
@@ -113,6 +136,30 @@ def key_from_event(event) -> str | None:
         elif Qt.Key_F1 <= k <= Qt.Key_F24:
             name = f"f{k - Qt.Key_F1 + 1}"
     return name if name in model.KEY_CODES else None
+
+
+_PUNCTUATION = {"minus", "equal", "left_bracket", "right_bracket", "semicolon", "apostrophe", "grave",
+                "backslash", "comma", "period", "slash"}
+
+
+def layout_chars() -> dict[str, str]:
+    """What each punctuation key types in the PC's current keyboard layout (Windows only)."""
+    if sys.platform != "win32":
+        return {}
+    import ctypes
+    user32 = ctypes.windll.user32
+    user32.GetKeyboardLayout.restype = ctypes.c_void_p
+    user32.MapVirtualKeyExW.argtypes = [ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p]
+    user32.MapVirtualKeyExW.restype = ctypes.c_uint
+    hkl = user32.GetKeyboardLayout(0)
+    out = {}
+    for scan, name in _SCAN.items():
+        if name in _PUNCTUATION:
+            vk = user32.MapVirtualKeyExW(scan, 3, hkl)                 # scan code -> virtual key
+            char = user32.MapVirtualKeyExW(vk, 2, hkl) & 0x7FFFFFFF    # -> character (high bit: dead key)
+            if char:
+                out[name] = chr(char)
+    return out
 
 
 # -- binding editor ----------------------------------------------------------------

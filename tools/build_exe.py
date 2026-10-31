@@ -56,7 +56,8 @@ Mousey runs from this folder; nothing is installed.
 
 1. If you're looking at this inside the zip, extract it first:
    right-click the zip > Extract All..., and choose a folder to keep it in.
-   (Running Mousey.exe from inside the zip doesn't work.)
+   (Running Mousey.exe from inside the zip doesn't work. If Windows says "This
+   application may depend on other compressed files in this folder", choose Extract all.)
 2. Run Mousey.exe from the extracted Mousey folder.
    The first time, Windows may say "Windows protected your PC" because the app isn't
    code-signed: click "More info", then "Run anyway".

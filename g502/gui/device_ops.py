@@ -74,6 +74,8 @@ class DeviceMixin:
             self.active = profile
             self._refresh_all()
             self.statusBar().showMessage(f"Profile {profile} is now in use on the mouse", 4000)
+            if self.tester is not None:
+                self.tester.set_profile(*self._tester_profile())
 
     def _poll_failed(self, e: Exception) -> None:
         self._polling = False
@@ -104,6 +106,10 @@ class DeviceMixin:
             path = latest_backup(self.backup_dir)
             if path:
                 self.load(backup.load_backup(path), False)
+            elif isinstance(e, DeviceNotFound):
+                self.note_error(e)        # the "Plug in your G502 HERO" page says it all
+                self.statusBar().showMessage("No G502 HERO found. Waiting for it to be plugged in…")
+                return
         self._show_error(e)
 
     def open_backup(self) -> None:

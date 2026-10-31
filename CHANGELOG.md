@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Button tester reads keys by their position, so it names the right button on any keyboard
+  layout (it got punctuation keys wrong on a UK layout). Key capture in the binding editor
+  too.
+- Key names show what the key types in the PC's layout (e.g. `#` instead of `\` on UK).
+- The button tester follows the mouse when its profile button switches profile.
+- Fixed an occasional silent crash when Mousey closed.
+- With no mouse and no backups, the window shows a "Plug in your G502 HERO" page instead of
+  an empty editor and an error.
+
 ## 0.9.0 (beta), 2026-10-30
 
 First packaged build of Mousey: a portable zip (`Mousey-0.9.0.zip`) containing the

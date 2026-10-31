@@ -26,6 +26,8 @@ _QT_MEDIA = {Qt.Key_VolumeUp: "0x00E9", Qt.Key_VolumeDown: "0x00EA", Qt.Key_Volu
              Qt.Key_MediaPrevious: "0x00B6", Qt.Key_MediaStop: "0x00B7"}
 # The PC can't tell left from right modifier keys reliably, so compare them as one.
 _SIDELESS = {"rctrl": "lctrl", "rshift": "lshift", "ralt": "lalt", "rgui": "lgui"}
+# Keys Windows delivers with the same scan code, so the tester can't tell them apart.
+_SAME_KEY = {"non_us_hash": "backslash"}
 # Actions that happen inside the mouse and send nothing the PC can see.
 INVISIBLE = {"dpi_up", "dpi_down", "dpi_cycle", "dpi_default", "dpi_shift", "profile_next", "profile_prev",
              "profile_cycle", "gshift", "battery_level"}
@@ -38,7 +40,8 @@ def same_action(binding: dict, seen: dict) -> bool:
     if binding["type"] == "key":
         def mods(d):
             return {_SIDELESS.get(m, m) for m in d.get("modifiers", [])}
-        return binding["key"] == seen["key"] and mods(binding) == mods(seen)
+        return (_SAME_KEY.get(binding["key"], binding["key"]) == _SAME_KEY.get(seen["key"], seen["key"])
+                and mods(binding) == mods(seen))
     return binding == seen
 
 
@@ -103,24 +106,28 @@ class Pad(QFrame):
 
 
 class ButtonTesterDialog(QDialog):
+    """Follows the mouse: the main window calls set_profile when another profile comes into use."""
+
     def __init__(self, profile: dict, title: str, tokens: dict, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Button tester")
         self.resize(720, 760)
         self.tokens = tokens
-        self.rows = rows_for(profile)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(22, 18, 22, 16)
         lay.setSpacing(10)
         lay.addWidget(QLabel("Button tester", objectName="Title"))
-        lay.addWidget(hint(f"Testing {title}. Each button's action is ticked when the PC receives it. DPI, "
-                           "profile and G-Shift buttons work inside the mouse and send nothing to the PC: watch "
-                           "the mouse's lights (or the In use label) for those. Media keys may be taken by "
-                           "Windows before they reach this window."))
+        self.testing = QLabel(objectName="Section")
+        lay.addWidget(self.testing)
+        lay.addWidget(hint("Each button's action is ticked when the PC receives it. DPI, profile and G-Shift "
+                           "buttons work inside the mouse and send nothing to the PC: watch the mouse's lights "
+                           "(or the In use label) for those. Switching profile with the mouse's profile button "
+                           "switches the tester too. Media keys may be taken by Windows before they reach this "
+                           "window."))
         self.pad = Pad(self._received)
         lay.addWidget(self.pad)
 
-        self.table = QTableWidget(len(self.rows), 3)
+        self.table = QTableWidget(0, 3)
         self.table.setHorizontalHeaderLabels(["Button", "Action", "Seen"])
         self.table.verticalHeader().hide()
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -131,16 +138,6 @@ class ButtonTesterDialog(QDialog):
         h.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         h.setSectionResizeMode(1, QHeaderView.Stretch)
         h.setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        for r, (button, layer, binding) in enumerate(self.rows):
-            name = f"{button} (G-Shift)" if layer else button
-            action = labels.describe_binding(binding)
-            invisible = binding.get("type") == "special" and binding.get("action") in INVISIBLE
-            for c, text in enumerate((name, action, "inside the mouse" if invisible else "")):
-                item = QTableWidgetItem(text)
-                if invisible:
-                    item.setForeground(QColor(tokens["muted"]))
-                self.table.setItem(r, c, item)
-        self.table.resizeRowsToContents()
         lay.addWidget(self.table, 1)
 
         lay.addWidget(QLabel("Received", objectName="Muted"))
@@ -152,7 +149,26 @@ class ButtonTesterDialog(QDialog):
         buttons.rejected.connect(self.reject)
         buttons.button(QDialogButtonBox.Close).setFocusPolicy(Qt.NoFocus)
         lay.addWidget(buttons)
+        self.set_profile(profile, title)
         QTimer.singleShot(0, self.pad.setFocus)
+
+    def set_profile(self, profile: dict, title: str) -> None:
+        """Show `profile`'s buttons, with nothing ticked yet."""
+        self.rows = rows_for(profile)
+        self.testing.setText(f"Testing {title}")
+        self.table.setRowCount(len(self.rows))
+        for r, (button, layer, binding) in enumerate(self.rows):
+            name = f"{button} (G-Shift)" if layer else button
+            action = labels.describe_binding(binding)
+            invisible = binding.get("type") == "special" and binding.get("action") in INVISIBLE
+            for c, text in enumerate((name, action, "inside the mouse" if invisible else "")):
+                item = QTableWidgetItem(text)
+                if invisible:
+                    item.setForeground(QColor(self.tokens["muted"]))
+                self.table.setItem(r, c, item)
+        self.table.resizeRowsToContents()
+        if self.log.count():
+            self.log.insertItem(0, f"Now testing {title}")
 
     def matches(self, seen: dict) -> list[int]:
         return [r for r, (_, _, b) in enumerate(self.rows) if same_action(b, seen)]

@@ -54,7 +54,8 @@ Mousey is portable: nothing is installed.
 
 1. Download `Mousey-<version>.zip` from the releases page.
 2. Right-click it → **Extract All…** and pick a folder to keep it in. (Running it from
-   inside the zip doesn't work.)
+   inside the zip doesn't work: Windows says "This application may depend on other
+   compressed files in this folder…". Choose **Extract all**.)
 3. Run `Mousey.exe` in the extracted `Mousey` folder. The first time, Windows may say
    "Windows protected your PC" because the app isn't code-signed: click **More info →
    Run anyway**. Optionally right-click `Mousey.exe` → **Pin to Start**.

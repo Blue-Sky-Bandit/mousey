@@ -16,16 +16,20 @@ from .tester import ButtonTesterDialog
 class ToolsMixin:
     """Part of MainWindow; uses its state (self.edited, self.source, ...)."""
 
-    def open_tester(self) -> None:
+    def _tester_profile(self) -> tuple[dict, str]:
+        """The profile in use on the mouse as stored there, or the editor's when that's unknown."""
         if self.connected and self.active is not None:
             profile = next((p for p in self.original if p["sector"] == self.active), None)
-            title = f"Profile {self.active}, as stored on the mouse"
-        else:
-            profile, title = None, ""
-        if profile is None:
-            profile = self.prof
-            title = f"{profile_title(profile)} as shown in the editor (it may not be what's on the mouse)"
-        ButtonTesterDialog(profile, title, self.tokens, self).exec()
+            if profile is not None:
+                return profile, f"Profile {self.active}, as stored on the mouse"
+        return self.prof, f"{profile_title(self.prof)} as shown in the editor (it may not be what's on the mouse)"
+
+    def open_tester(self) -> None:
+        self.tester = ButtonTesterDialog(*self._tester_profile(), self.tokens, self)
+        try:
+            self.tester.exec()
+        finally:
+            self.tester = None
 
     def _pick_profile(self, prompt: str) -> int | None:
         """Index into self.edited of another profile the user picks, or None."""
