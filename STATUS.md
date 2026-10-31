@@ -29,7 +29,8 @@ and restored as expected. Results:
   key with the mouse's name) into
   `%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\G502Configurator`. Only
   processes started from Claude see it. That's also why the mouse name had "reset". Real
-  users never hit this. The 22 old backups are still there, untouched.
+  users never hit this. The 22 old backups are still there, untouched; on 2026-10-31 they were also copied
+  (byte-identical) into the real `%APPDATA%\Mousey\backups`.
 - **Live tracking, safety locks (left click, in-use profile), single-layer sniper key,
   G-Shift layer with Ctrl+V, DPI, breathing + DPI lights off, library save/load/undo,
   swap, restore from the Backups window, splash with no mouse + auto-read on plug-in:**
