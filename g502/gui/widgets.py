@@ -455,7 +455,7 @@ class LedEditor(QFrame):
         self.effect.setCurrentIndex(self.effect.findData(e))
         self.color.set_color(zone.get("color", "#FFFFFF"))
         self.speed.setValue(zone.get("period_ms", 8000) / 1000)
-        self.bright.setValue(max(1, zone.get("brightness", 100)))
+        self.bright.setValue(zone.get("brightness", 100) or 100)    # 0 = full (factory profiles)
         self._loading = False
         self._refresh()
 
@@ -468,11 +468,14 @@ class LedEditor(QFrame):
         if e == "fixed":
             return {"effect": "fixed", "color": self.color.color()}
         period = int(round(self.speed.value() * 1000))
+        bright = self.bright.value()
+        if bright == 100 and self._zone.get("brightness") == 0:
+            bright = 0                      # unchanged full brightness: keep the factory byte
         if e == "cycle":
-            return {"effect": "cycle", "period_ms": period, "brightness": self.bright.value()}
+            return {"effect": "cycle", "period_ms": period, "brightness": bright}
         return {"effect": "breathing", "color": self.color.color(), "period_ms": period,
                 "waveform": self._zone.get("waveform", 0) if self._zone.get("effect") == "breathing" else 0,
-                "brightness": self.bright.value()}
+                "brightness": bright}
 
     def _edited(self) -> None:
         if self._loading:

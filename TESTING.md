@@ -3,17 +3,17 @@
 **Session 1 done (2026-10-31).** Results are in STATUS.md ("Testing session 1"). For the
 next session, after building a new zip, only these are left:
 
-- [ ] **Tester on Finals (profile 4):** press every button. Thumb back should tick "Thumb
+- [x] **Tester on Finals (profile 4):** passed 2026-10-31. press every button. Thumb back should tick "Thumb
   back", DPI up "DPI up" (both were mixed up by the UK keyboard layout; now fixed). Key
   names should show `#` where a US keyboard would say `\`. Then press the profile button
   while the tester is open: it should switch to the new profile and clear its ticks.
 - [ ] **First start without a mouse, fresh PC (optional):** on a PC that has never run
   Mousey, start it with the mouse unplugged: a "Plug in your G502 HERO" page, no error
   pop-up; plugging the mouse in reads it.
-- [ ] **Factory profiles 1 and 2 lighting:** reset a spare profile to *Factory profile 1*
+- [x] **Factory profiles 1 and 2 lighting:** done 2026-10-31 (cycle; breathing #00DCFF; 0 = full). reset a spare profile to *Factory profile 1*
   (and later 2), write, and note what the lights do (these store brightness 0). Restore
   afterwards from the Backups window.
-- [ ] **Host-mode recovery:** only if it ever happens (test 21).
+- [ ] **Host-mode recovery:** parked for now (user).
 
 The full plan from session 1 follows, for reference.
 

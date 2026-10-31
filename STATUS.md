@@ -47,12 +47,21 @@ and restored as expected. Results:
   use (and clears its ticks) when the profile button is pressed.
 - **Factory reset of profile 3:** worked; lights went solid white. That's correct: factory
   profile 3 is *fixed #FFFFFF* in ROM. Brightness 0 only appears in factory profiles 1
-  (colour cycle) and 2 (breathing), so what brightness 0 does is still unknown.
+  (colour cycle) and 2 (breathing): see the follow-up below.
 - **Power-up profile:** 3 of 3 times the mouse came back on the profile it was unplugged
   on (not profile 1). The 29 Oct "came back on profile 1" remains unexplained.
 
-Still to check: the tester on Finals again (with the layout fix), factory profiles 1/2
-lighting, host-mode recovery if it ever happens. See TESTING.md.
+Follow-up (user, 2026-10-31, same day):
+
+- **Tester on Finals with the layout fix:** passed.
+- **Factory profile 1:** both zones colour cycle, visibly on. **Factory profile 2:**
+  breathing #00DCFF. So **brightness 0 = full brightness** (factory default), not off.
+  The app now shows it as 100%; the editor shows 100 and keeps the 0 byte unless the
+  brightness itself is changed (it used to show 1%, and editing anything else in the zone
+  would have written 1%).
+- **Host-mode recovery:** not needed for now (user). **Installer:** not for now (user).
+
+Nothing left from session 1.
 
 ## How to run
 
@@ -262,7 +271,7 @@ hint to re-export.
 **LEDs** (11 bytes): `00` off · `01 RGB` fixed · `03 …5×00 period(BE) brightness` cycle ·
 `0A RGB period(BE) waveform brightness` breathing. **Confirmed 2026-10-29:** zone 0 is
 the logo, zone 1 is the DPI indicator lights. Factory profiles 1 and 2 have brightness 0
-(cycle, breathing), user profiles 100; what 0 means is not confirmed. Factory profile 3 is
+(cycle, breathing), user profiles 100; 0 shows at full brightness (confirmed 2026-10-31). Factory profile 3 is
 fixed white (confirmed 2026-10-31).
 
 **Safety of the model**: any field whose decoding would not re-encode exactly (unknown

@@ -256,3 +256,18 @@ def test_waiting_page_without_mouse_or_backups(qapp, tmp_path, monkeypatch):
     assert w.pages.currentIndex() == 0 and "Waiting" in w.statusBar().currentMessage()
     w.load(current(), connected=False)
     assert w.pages.currentIndex() == 1
+
+
+def test_factory_brightness_zero_is_full(qapp):
+    from g502 import labels
+    from g502.gui.widgets import LedEditor
+    zone = {"effect": "cycle", "period_ms": 8000, "brightness": 0}
+    assert labels.describe_led(zone).endswith("brightness 100%")
+    ed = LedEditor("Logo")
+    ed.set_zone(zone)
+    assert ed.bright.value() == 100
+    assert ed.zone() == zone                                  # untouched: byte stays 0
+    ed.speed.setValue(4)
+    assert ed.zone()["brightness"] == 0                       # other edits don't dim it
+    ed.bright.setValue(50)
+    assert ed.zone()["brightness"] == 50

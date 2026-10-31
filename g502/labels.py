@@ -117,6 +117,11 @@ def describe_binding(b: dict) -> str:
     return f"Unrecognised ({b.get('hex', '?')}), kept as is"
 
 
+def _brightness(z: dict) -> str:
+    # Factory profiles store 0; the mouse shows that at full brightness (confirmed 2026-10-31).
+    return "100%" if z["brightness"] == 0 else f"{z['brightness']}%"
+
+
 def describe_led(z: dict) -> str:
     e = z.get("effect")
     if e == "off":
@@ -124,9 +129,9 @@ def describe_led(z: dict) -> str:
     if e == "fixed":
         return f"Solid {z['color']}"
     if e == "cycle":
-        return f"Colour cycle, {z['period_ms'] / 1000:g} s, brightness {z['brightness']}%"
+        return f"Colour cycle, {z['period_ms'] / 1000:g} s, brightness {_brightness(z)}"
     if e == "breathing":
-        return f"Breathing {z['color']}, {z['period_ms'] / 1000:g} s, brightness {z['brightness']}%"
+        return f"Breathing {z['color']}, {z['period_ms'] / 1000:g} s, brightness {_brightness(z)}"
     return f"Unrecognised ({z.get('hex', '?')}), kept as is"
 
 

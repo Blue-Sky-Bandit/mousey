@@ -7,6 +7,8 @@
   too.
 - Key names show what the key types in the PC's layout (e.g. `#` instead of `\` on UK).
 - The button tester follows the mouse when its profile button switches profile.
+- Brightness 0 (stored by the factory profiles) shows as full brightness, which is how the
+  mouse shows it; editing a factory profile's lighting no longer dims it to 1%.
 - Fixed an occasional silent crash when Mousey closed.
 - With no mouse and no backups, the window shows a "Plug in your G502 HERO" page instead of
   an empty editor and an error.
