@@ -38,7 +38,7 @@ spare for copy/swap. Leave profile 4 ("Finals") alone. Everything gets put back 
 - [ ] **0.2 Dynamic Lighting off** for the mouse (Settings → Personalization → Dynamic
   Lighting), otherwise lighting tests will look wrong.
 - [ ] **0.3 Mouse plugged in** by cable.
-- [ ] **0.4 Extract the release.** Copy `A:\Personal\Claude\MouseSoftware\dist\Mousey-0.9.0.zip`
+- [ ] **0.4 Extract the release.** Copy `dist\Mousey-<version>.zip` (in the project folder)
   to e.g. Documents, right-click → **Extract All…**. You should get one `Mousey` folder
   containing `Mousey.exe`, `_internal`, `START HERE.txt` and `LICENSE.txt`.
   *Note:* anything unexpected in the folder.

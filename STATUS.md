@@ -5,11 +5,11 @@
 | Phase | State |
 |---|---|
 | 1. Connect and read-only | **Done** (2026-10-29) |
-| 2. Backup and restore | **Done** (2026-10-29): backup verified; restore proven by changing sector 3 and reverting it byte-for-byte. Directory write and unplug persistence not yet exercised |
+| 2. Backup and restore | **Done**: byte-for-byte backups; restore from the GUI confirmed in testing session 1 (2026-10-31) |
 | 3. Parse and export | **Done** (2026-10-29): byte-exact decode/encode of all 10 user + factory profiles; `export` command |
-| 4. Edit and write | **In progress**: `apply` built; physical mapping confirmed on profile 3 and restored; confirmed names and single-layer mode built (export format 2). Next: real edits, one approved write at a time |
-| 5. GUI | **In progress**: Mousey (PySide6) built; first write from it (user) persisted across unplug; live profile tracking added |
-| 6. Packaging | **In progress**: portable one-folder zip `dist\Mousey-0.9.0.zip` builds and passes its self-test (window + read-only mouse read); README, MIT LICENSE, CHANGELOG done; video splash waiting on the user's file; installer deferred; GitHub release not done (needs the user's account) |
+| 4. Edit and write | **Done**: buttons, G-Shift/single layer, DPI, lighting, names, active/deactivated, swap, factory reset all written and checked on hardware (2026-10-29 to 31) |
+| 5. GUI | **Done**: Mousey (PySide6), all features tested by the user from the packaged app (2026-10-31) |
+| 6. Packaging | **Done for 1.0.0** (2026-10-31): portable zip `dist\Mousey-1.0.0.zip`, self-tested; README, MIT LICENSE, CHANGELOG, splash. GitHub release: next. Installer: parked (user) |
 
 ## Testing session 1 (user, 2026-10-31, packaged 0.9.0 from the zip)
 
@@ -108,8 +108,7 @@ python -m g502 restore FILE [--sectors 6] [--yes]   # WRITES
   Each sector: write → read back → compare; first error or mismatch stops everything, with
   no retries, and reports which sectors were already written.
 - Write sequence (per libratbag): fn 6 MEMORY_ADDR_WRITE `[sector BE, offset 0, length BE]`,
-  fn 7 MEMORY_WRITE ×16 (16-byte chunks), fn 8 MEMORY_WRITE_END. **Not yet exercised on
-  hardware.**
+  fn 7 MEMORY_WRITE ×16 (16-byte chunks), fn 8 MEMORY_WRITE_END. Exercised on hardware since (2026-10-29 onwards).
 
 Verified backups (2026-10-29), byte-identical, 22 sectors each:
 - `g502-backup-20261029-082724-624652.json`
@@ -127,8 +126,7 @@ restore plans nothing (mouse already matches).
   Mode still onboard, current profile 4, DPI index 1.
 - Most likely explanation: the firmware buffers the sector and **validates the CRC at
   WRITE_END**, committing nothing if it fails. Sector 6 is all FF, so its "CRC" is FF FF
-  ≠ CRC of the data. Consistent with libratbag always appending a CRC. Not yet proven —
-  a write with a valid CRC (sector 3 no-op) would confirm it.
+  ≠ CRC of the data. Consistent with libratbag always appending a CRC. Confirmed by the later sector 3 writes.
 - Consequence: **blank sectors can't be restored by writing them.**
 
 ### Write test 2 — sector 3 no-op (2026-10-29 09:01): **success**
@@ -154,7 +152,7 @@ restore plans nothing (mouse already matches).
   independent fresh backup `...090611-332164.json` differs from the original only in sector
   3, which equals the test file. The profile name on the mouse is now `PROFILE_NAME_DEFAULX`.
   Mode onboard, profile 4, DPI index 1. **The write path really commits data.**
-- Not yet checked: that the change survives unplugging the mouse (flash vs RAM cache).
+- Survives unplugging: confirmed 2026-10-29 (GUI write) and 2026-10-31.
 - Step B live dry run: writes sector 3 only, reverting 0xC6 `X`→`T` and CRC C739→FE7E. A
   full restore without `--sectors` plans the same single sector.
 
@@ -179,7 +177,7 @@ restore plans nothing (mouse already matches).
 
 Caveat: a no-op rewrite proves the write commands are accepted and nothing is damaged, but
 cannot prove bytes were actually committed (an ignored write reads back the same).
-A real-change test is needed later (e.g. change one byte in an unused sector, then restore).
+Real changes were made and restored since (write test 3 and the GUI writes).
 
 ## Device findings (confirmed on hardware)
 
@@ -454,8 +452,7 @@ Toolkit: PySide6, chosen by the user for a polished look (over Tkinter). Install
   deactivate the profile in use (checked again against a fresh read before writing).
 - Device name: only 0x0005 Device Name (read-only) is present; there is no 0x0007 Friendly
   Name, so the mouse itself can't be renamed. Profile names (24 chars) are writable.
-- Not yet: a write made from the GUI (first one should be a small change with approval),
-  app icon, the clickable mouse picture.
+- GUI writes and the app icon: done since. The clickable mouse picture was not built.
 
 **Left click lock** (user decision, 2026-10-29): in Mousey the main-layer left button can't
 be changed while it is Left click (shown as "Left click 🔒"); its G-Shift-layer action can.
@@ -472,7 +469,7 @@ apply, so it can be fixed in Mousey. The CLI stays unrestricted.
 - **Button tester** (`g502/gui/tester.py`): a pad that receives mouse buttons, keys, wheel
   tilt and media keys, and ticks the profile's buttons whose action matches. DPI, profile
   and G-Shift actions are marked "inside the mouse" since the PC sees nothing. Tilt
-  direction mapping (Qt horizontal wheel sign) is unverified.
+  direction confirmed correct (2026-10-31).
 - **Copy / swap** (Profile tab): copy this profile's settings to another slot, or swap two;
   same rules as library loads (left click lock, hidden G-Shift table kept when single-layer,
   Active status stays with the slot).
@@ -539,7 +536,7 @@ apply, so it can be fixed in Mousey. The CLI stays unrestricted.
 - **Branding check:** no Logitech logos; Logitech is named only to say which mouse it is
   for, in the "not affiliated" notice, and in technical identifiers (USB vendor ID,
   G Hub process names). The user's icon had a Logitech G, replaced by an "A".
-- **Not done:** GitHub repository and release (needs the user's account; nothing pushed).
+- **GitHub:** the user is creating a public repository on their personal account (2026-10-31).
 
 ## Environment notes
 

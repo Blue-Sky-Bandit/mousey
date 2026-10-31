@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 1.0.0, 2026-10-31
+
+First full release. Everything in 0.9.0 has now been tested on a G502 HERO, from the
+packaged zip: reading, backups, every kind of write, swap, factory reset, restore,
+unplug/replug and the splash. Changes since 0.9.0:
 
 - Button tester reads keys by their position, so it names the right button on any keyboard
   layout (it got punctuation keys wrong on a UK layout). Key capture in the binding editor
@@ -32,4 +36,3 @@ First packaged build of Mousey: a portable zip (`Mousey-0.9.0.zip`) containing t
   folder are still listed and restorable.
 - Command-line tool (`python -m g502`) for scripting and recovery.
 
-Still to be confirmed on hardware before 1.0: see "Next testing session" in STATUS.md.
